@@ -149,6 +149,30 @@ def start_countdown(screen, font):
         pygame.display.flip()
         pygame.time.delay(1000)  # Espera 1 segundo
 
+def show_game_over_screen(screen, font, survival_time):
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # Começa um novo jogo
+                    return True
+                elif event.key == pygame.K_ESCAPE:  # Sai do jogo
+                    return False
+
+        screen.fill(BLACK)
+        game_over_text = font.render("Game Over", True, WHITE)
+        survival_text = font.render(f"Você sobreviveu por {survival_time} segundos", True, WHITE)
+        restart_text = font.render("Pressione ESPAÇO para jogar novamente", True, WHITE)
+        exit_text = font.render("Pressione ESC para sair", True, WHITE)
+
+        screen.blit(game_over_text, (100, 100))
+        screen.blit(survival_text, (100, 200))
+        screen.blit(restart_text, (100, 300))
+        screen.blit(exit_text, (100, 400))
+
+        pygame.display.flip()
+
+
 def run_game():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -183,7 +207,11 @@ def run_game():
                 player.take_damage(current_time)
 
             if not player.alive:
-                break
+                survival_time = (pygame.time.get_ticks() - start_ticks) // 1000
+                if show_game_over_screen(screen, font, survival_time):
+                    run_game()  # Reinicia o jogo
+                else:
+                    break
 
             # Atualiza a taxa de spawn mais rapidamente
             if current_time - last_spawn_rate_change > 30000:  # A cada 30 segundos
