@@ -31,11 +31,33 @@ def create_game_objects():
 
 def handle_events(player, projectile_group):
     for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-            fire_projectiles(player, projectile_group)
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_SPACE:
+                fire_projectiles(player, projectile_group)
+            elif event.key == pygame.K_ESCAPE:  # Detecta se ESC foi pressionado
+                return True  # Indica que o jogo deve pausar
         elif event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
+    return False
+
+def pause_game(screen, font):
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # Retoma o jogo
+                    paused = False
+                elif event.key == pygame.K_ESCAPE:  # Sai do jogo
+                    pygame.quit()
+                    sys.exit()
+
+        screen.fill(BLACK)
+        pause_text = font.render("Jogo Pausado", True, WHITE)
+        resume_text = font.render("Pressione ESPAÇO para continuar", True, WHITE)
+        screen.blit(pause_text, (100, 100))
+        screen.blit(resume_text, (100, 150))
+        pygame.display.flip()
 
 def fire_projectiles(player, projectile_group):
     direction = Vector2(1, 0)
@@ -194,6 +216,9 @@ def run_game():
         while True:
             current_time = pygame.time.get_ticks()
             keys = pygame.key.get_pressed()
+
+            if handle_events(player, projectile_group):
+                pause_game(screen, font)
                     # Continuação da função run_game
             handle_events(player, projectile_group)
 
