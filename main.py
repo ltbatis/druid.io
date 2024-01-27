@@ -9,6 +9,7 @@ from settings import *
 
 def run_game():
     # Inicializa o Pygame
+    start_ticks = pygame.time.get_ticks()
     monster_spawn_timer = 0
     monster_spawn_rate = 5000  # Tempo em milissegundos (5 segundos)
     score = 0
@@ -59,8 +60,10 @@ def run_game():
          # Atualiza os monstros
         monster_group.update()
 
-        # Preenche a tela com preto
-        screen.fill(BLACK)
+        seconds = (pygame.time.get_ticks() - start_ticks) // 1000
+        time_text = font.render(f'Time: {seconds} sec', True, WHITE)
+        screen.fill(BLACK)  # Certifique-se de preencher a tela antes de desenhar o texto
+        screen.blit(time_text, (10, SCREEN_HEIGHT - 30))
         
         # Desenha o jogador
         player_group.draw(screen)
