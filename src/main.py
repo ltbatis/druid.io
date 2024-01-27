@@ -1,4 +1,5 @@
 import pygame
+import random
 import sys
 from player import Player
 from monster import Monster
@@ -113,6 +114,12 @@ def render_score_and_time(screen, font, start_ticks, score):
     time_text = font.render(f'Time: {seconds} sec', True, WHITE)
     screen.blit(time_text, (10, 50))
 
+def random_spawn_position():
+    # Retorna uma posição aleatória ao redor das bordas do mapa
+    x = random.choice([0, SCREEN_WIDTH])
+    y = random.choice([0, SCREEN_HEIGHT])
+    return x, y
+
 def run_game():
     font = initialize_pygame()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -121,7 +128,10 @@ def run_game():
 
     player, player_group, projectile_group, monster_group, experience_points_group, rotating_projectile, all_sprites = create_game_objects()
     monster_spawn_timer = 0
-    monster_spawn_rate = 5000
+    current_monster_spawn_rate = 3000  # Começa com 3 segundos
+    min_monster_spawn_rate = 500  # Mínimo de 0,5 segundos
+    spawn_rate_decrease = 500  # Diminui a taxa de spawn em 500 ms a cada 30 segundos
+    last_spawn_rate_change = pygame.time.get_ticks()
     score = 0
     start_ticks = pygame.time.get_ticks()
 
@@ -143,10 +153,18 @@ def run_game():
         if not player.alive:
             break
 
-        # Adiciona novos monstros com base no temporizador
+        # Atualiza a taxa de spawn mais rapidamente
+        if current_time - last_spawn_rate_change > 30000:  # A cada 30 segundos
+            current_monster_spawn_rate = max(min_monster_spawn_rate, current_monster_spawn_rate - spawn_rate_decrease)
+            last_spawn_rate_change = current_time
+
+        # Gerar monstros
         monster_spawn_timer += clock.get_time()
-        if monster_spawn_timer >= monster_spawn_rate:
-            monster_group.add(Monster(player))
+        if monster_spawn_timer >= current_monster_spawn_rate:
+            num_monsters_to_spawn = 1 + (current_time // 60000)  # Aumenta a cada minuto
+            for _ in range(num_monsters_to_spawn):
+                spawn_pos = random_spawn_position()  # Certifique-se de que essa função retorna uma tupla (x, y)
+                monster_group.add(Monster(player, spawn_pos))
             monster_spawn_timer = 0
 
         render(screen, font, [player_group, monster_group, projectile_group, experience_points_group, all_sprites], player, start_ticks, score)
