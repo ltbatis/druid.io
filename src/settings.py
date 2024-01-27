@@ -14,7 +14,7 @@ PINK = (255, 20, 147)
 
 # Configurações do jogador
 PLAYER_SPEED = 5
-PLAYER_HEALTH = 100
+PLAYER_HEALTH = 10
 
 # Configurações do monstro
 MONSTER_SPEED = 2

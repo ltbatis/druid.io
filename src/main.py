@@ -87,6 +87,7 @@ def render(screen, font, groups, player, start_ticks, score):
         group.draw(screen)
     render_experience_bar(screen, player)
     render_score_and_time(screen, font, start_ticks, score)
+    render_health_bar(screen, player)
     pygame.display.flip()
 
 def render_experience_bar(screen, player):
@@ -96,6 +97,14 @@ def render_experience_bar(screen, player):
     bar_length = experience_ratio * experience_bar_length
     experience_bar = pygame.Rect(10, 10, bar_length, experience_bar_height)
     pygame.draw.rect(screen, PINK, experience_bar)
+
+def render_health_bar(screen, player):
+    health_bar_length = 100
+    health_bar_height = 10
+    health_ratio = player.health / 10
+    bar_length = health_ratio * health_bar_length
+    health_bar = pygame.Rect(10, SCREEN_HEIGHT - 20, bar_length, health_bar_height)
+    pygame.draw.rect(screen, GREEN, health_bar)
 
 def render_score_and_time(screen, font, start_ticks, score):
     score_text = font.render(f'Score: {score}', True, WHITE)
@@ -117,6 +126,7 @@ def run_game():
     start_ticks = pygame.time.get_ticks()
 
     while True:
+        current_time = pygame.time.get_ticks()
         keys = pygame.key.get_pressed()
                 # Continuação da função run_game
         handle_events(player, projectile_group)
@@ -126,6 +136,12 @@ def run_game():
 
         score = collision_detection(player, monster_group, projectile_group, experience_points_group, rotating_projectile, score)
         detect_rotating_projectile_hits(monster_group, rotating_projectile, experience_points_group)
+
+        if pygame.sprite.spritecollideany(player, monster_group):
+            player.take_damage(current_time)
+
+        if not player.alive:
+            break
 
         # Adiciona novos monstros com base no temporizador
         monster_spawn_timer += clock.get_time()
