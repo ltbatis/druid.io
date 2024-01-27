@@ -12,6 +12,9 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect(center=(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2))
         self.speed = PLAYER_SPEED
         self.health = PLAYER_HEALTH
+        self.experience = 0
+        self.experience_needed_for_next_level = 10
+        self.number_of_projectiles = 1
 
     def update(self, keys):
         # Movimentação do jogador

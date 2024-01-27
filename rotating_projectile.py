@@ -18,7 +18,7 @@ class RotatingProjectile(pygame.sprite.Sprite):
         self.rect.centerx = player.rect.centerx + self.radius
         self.rect.centery = player.rect.centery
 
-    def update(self):
+    def update(self, **kwargs):
         self.angle += 5
         if self.angle >= 360:
             self.angle = 0
