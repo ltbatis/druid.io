@@ -59,7 +59,7 @@ def collision_detection(player, monster_group, projectile_group, experience_poin
     score = update_score_and_experience(hits, experience_points_group, score)
     hits = pygame.sprite.spritecollide(player, experience_points_group, True)
     update_player_experience(player, hits)
-    detect_rotating_projectile_hits(monster_group, rotating_projectile)
+    detect_rotating_projectile_hits(monster_group, rotating_projectile, experience_points_group)  
     return score
 
 def update_score_and_experience(hits, experience_points_group, score):
@@ -74,10 +74,12 @@ def update_player_experience(player, hits):
         if player.experience % 2 == 0:
             player.number_of_projectiles += 1
 
-def detect_rotating_projectile_hits(monster_group, rotating_projectile):
+def detect_rotating_projectile_hits(monster_group, rotating_projectile, experience_points_group):
     for monster in monster_group:
         if pygame.sprite.collide_rect(rotating_projectile, monster):
-            monster.kill()
+            monster.kill()  
+            experience_points_group.add(ExperiencePoint(monster.rect.center))  
+
 
 def render(screen, font, groups, player, start_ticks, score):
     screen.fill(BLACK)
@@ -123,6 +125,7 @@ def run_game():
         update_all_sprites(all_sprites, player, keys)
 
         score = collision_detection(player, monster_group, projectile_group, experience_points_group, rotating_projectile, score)
+        detect_rotating_projectile_hits(monster_group, rotating_projectile, experience_points_group)
 
         # Adiciona novos monstros com base no temporizador
         monster_spawn_timer += clock.get_time()
