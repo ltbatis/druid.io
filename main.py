@@ -5,6 +5,8 @@ from monster import Monster
 from pygame.math import Vector2
 from projectile import Projectile
 from settings import *
+from rotating_projectile import RotatingProjectile  # Ajuste o import conforme a localização da sua classe
+
 
 
 def run_game():
@@ -28,6 +30,9 @@ def run_game():
     player_group = pygame.sprite.Group(player)
 
     projectile_group = pygame.sprite.Group()
+    rotating_projectile = RotatingProjectile(player)
+    all_sprites = pygame.sprite.Group(player, rotating_projectile)  # Adicione outros sprites conforme necessário
+
 
     # Cria um grupo de sprites para os monstros
     monster_group = pygame.sprite.Group()
@@ -70,6 +75,14 @@ def run_game():
 
         projectile_group.update()
         projectile_group.draw(screen)
+        keys = pygame.key.get_pressed()
+        player.update(keys)
+        all_sprites.add(rotating_projectile)
+
+        # Atualiza os outros sprites sem argumentos adicionais
+        for sprite in all_sprites:
+            if sprite != player:
+                sprite.update()  
 
         # Desenha os monstros
         monster_group.draw(screen)
@@ -77,6 +90,12 @@ def run_game():
         # Verifica colisões entre projéteis e monstros
         hits = pygame.sprite.groupcollide(monster_group, projectile_group, True, True)
         
+        # Detecção de colisão entre o projétil giratório e monstros
+        for monster in monster_group:
+            if pygame.sprite.collide_rect(rotating_projectile, monster):
+                monster.kill()  # Remove o monstro acertado
+
+
         # Atualiza o temporizador
         monster_spawn_timer += clock.get_time()
 
