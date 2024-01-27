@@ -120,10 +120,40 @@ def random_spawn_position():
     y = random.choice([0, SCREEN_HEIGHT])
     return x, y
 
+def show_start_screen(screen, font):
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:  # Começa o jogo
+                    return True
+                elif event.key == pygame.K_ESCAPE:  # Sai do jogo
+                    return False
+
+        screen.fill(BLACK)
+        title_text = font.render("Bem-vindo ao Druid.io", True, WHITE)
+        start_text = font.render("Pressione ESPAÇO para começar", True, WHITE)
+        exit_text = font.render("Pressione ESC para sair", True, WHITE)
+
+        screen.blit(title_text, (100, 100))
+        screen.blit(start_text, (100, 200))
+        screen.blit(exit_text, (100, 300))
+
+        pygame.display.flip()
+
+def start_countdown(screen, font):
+    for i in range(5, 0, -1):
+        screen.fill(BLACK)
+        countdown_text = font.render(str(i), True, WHITE)
+        screen.blit(countdown_text, (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        pygame.display.flip()
+        pygame.time.delay(1000)  # Espera 1 segundo
+
 def run_game():
-    font = initialize_pygame()
+    pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption("Druid.io")
+    font = pygame.font.SysFont(None, 36)
     clock = pygame.time.Clock()
 
     player, player_group, projectile_group, monster_group, experience_points_group, rotating_projectile, all_sprites = create_game_objects()
@@ -135,41 +165,46 @@ def run_game():
     score = 0
     start_ticks = pygame.time.get_ticks()
 
-    while True:
-        current_time = pygame.time.get_ticks()
-        keys = pygame.key.get_pressed()
-                # Continuação da função run_game
-        handle_events(player, projectile_group)
+    if show_start_screen(screen, font):
+        start_countdown(screen, font)
+        while True:
+            current_time = pygame.time.get_ticks()
+            keys = pygame.key.get_pressed()
+                    # Continuação da função run_game
+            handle_events(player, projectile_group)
 
-        update_game_objects(player, keys, [monster_group, projectile_group, experience_points_group])
-        update_all_sprites(all_sprites, player, keys)
+            update_game_objects(player, keys, [monster_group, projectile_group, experience_points_group])
+            update_all_sprites(all_sprites, player, keys)
 
-        score = collision_detection(player, monster_group, projectile_group, experience_points_group, rotating_projectile, score)
-        detect_rotating_projectile_hits(monster_group, rotating_projectile, experience_points_group)
+            score = collision_detection(player, monster_group, projectile_group, experience_points_group, rotating_projectile, score)
+            detect_rotating_projectile_hits(monster_group, rotating_projectile, experience_points_group)
 
-        if pygame.sprite.spritecollideany(player, monster_group):
-            player.take_damage(current_time)
+            if pygame.sprite.spritecollideany(player, monster_group):
+                player.take_damage(current_time)
 
-        if not player.alive:
-            break
+            if not player.alive:
+                break
 
-        # Atualiza a taxa de spawn mais rapidamente
-        if current_time - last_spawn_rate_change > 30000:  # A cada 30 segundos
-            current_monster_spawn_rate = max(min_monster_spawn_rate, current_monster_spawn_rate - spawn_rate_decrease)
-            last_spawn_rate_change = current_time
+            # Atualiza a taxa de spawn mais rapidamente
+            if current_time - last_spawn_rate_change > 30000:  # A cada 30 segundos
+                current_monster_spawn_rate = max(min_monster_spawn_rate, current_monster_spawn_rate - spawn_rate_decrease)
+                last_spawn_rate_change = current_time
 
-        # Gerar monstros
-        monster_spawn_timer += clock.get_time()
-        if monster_spawn_timer >= current_monster_spawn_rate:
-            num_monsters_to_spawn = 1 + (current_time // 60000)  # Aumenta a cada minuto
-            for _ in range(num_monsters_to_spawn):
-                spawn_pos = random_spawn_position()  # Certifique-se de que essa função retorna uma tupla (x, y)
-                monster_group.add(Monster(player, spawn_pos))
-            monster_spawn_timer = 0
+            # Gerar monstros
+            monster_spawn_timer += clock.get_time()
+            if monster_spawn_timer >= current_monster_spawn_rate:
+                num_monsters_to_spawn = 1 + (current_time // 60000)  # Aumenta a cada minuto
+                for _ in range(num_monsters_to_spawn):
+                    spawn_pos = random_spawn_position()  # Certifique-se de que essa função retorna uma tupla (x, y)
+                    monster_group.add(Monster(player, spawn_pos))
+                monster_spawn_timer = 0
 
-        render(screen, font, [player_group, monster_group, projectile_group, experience_points_group, all_sprites], player, start_ticks, score)
+            render(screen, font, [player_group, monster_group, projectile_group, experience_points_group, all_sprites], player, start_ticks, score)
 
-        clock.tick(60)
+            clock.tick(60)
+        else:
+            pygame.quit()
+            sys.exit()
 
 if __name__ == "__main__":
     run_game()
