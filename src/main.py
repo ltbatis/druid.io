@@ -6,132 +6,134 @@ from pygame.math import Vector2
 from projectile import Projectile
 from settings import *
 from experience_point import ExperiencePoint
-from rotating_projectile import RotatingProjectile  # Ajuste o import conforme a localização da sua classe
+from rotating_projectile import RotatingProjectile
 
-def run_game():
-    # Inicializa o Pygame
+def initialize_pygame():
     pygame.init()
     pygame.font.init()
-    font = pygame.font.SysFont(None, 36)
-    start_ticks = pygame.time.get_ticks()
-    monster_spawn_timer = 0
-    monster_spawn_rate = 5000  # Tempo em milissegundos (5 segundos)
-    score = 0
+    return pygame.font.SysFont(None, 36)
 
-    # Configura a tela
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-    pygame.display.set_caption("Druid.io")
-
-    # Controle de tempo
-    clock = pygame.time.Clock()
-
-    # Cria o jogador
+def create_game_objects():
     player = Player()
-    # Cria um grupo de sprites para o jogador
     player_group = pygame.sprite.Group(player)
 
-    # Grupos para projéteis, monstros e pontos de experiência
     projectile_group = pygame.sprite.Group()
     monster_group = pygame.sprite.Group()
     experience_points_group = pygame.sprite.Group()
-
-    # Cria um projétil rotatório e adiciona ao grupo all_sprites
     rotating_projectile = RotatingProjectile(player)
-    all_sprites = pygame.sprite.Group(player, rotating_projectile)  # Inclua outros sprites conforme necessário
+    all_sprites = pygame.sprite.Group(player, rotating_projectile)
 
-    # Adiciona monstros ao grupo
     for _ in range(5):
         monster_group.add(Monster(player))
 
-    # Loop principal do jogo
-    running = True
-    while running:
-        # Trata eventos
-        for event in pygame.event.get():
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
-                    # Dispara projéteis
-                    direction = Vector2(1, 0)
-                    for _ in range(player.number_of_projectiles):
-                        projectile = Projectile(player.rect.center, direction)
-                        projectile_group.add(projectile)
-            if event.type == pygame.QUIT:
-                running = False
+    return player, player_group, projectile_group, monster_group, experience_points_group, rotating_projectile, all_sprites
 
-        # Atualiza o jogador e grupos de sprites
+def handle_events(player, projectile_group):
+    for event in pygame.event.get():
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            fire_projectiles(player, projectile_group)
+        elif event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+def fire_projectiles(player, projectile_group):
+    direction = Vector2(1, 0)
+    for _ in range(player.number_of_projectiles):
+        projectile = Projectile(player.rect.center, direction)
+        projectile_group.add(projectile)
+
+def update_game_objects(player, keys, groups):
+    player.update(keys)
+    for group in groups:
+        group.update()
+
+def update_all_sprites(all_sprites, player, keys):
+    for sprite in all_sprites:
+        if isinstance(sprite, Player):
+            sprite.update(keys)
+        else:
+            sprite.update()
+
+def collision_detection(player, monster_group, projectile_group, experience_points_group, rotating_projectile, score):
+    hits = pygame.sprite.groupcollide(monster_group, projectile_group, True, True)
+    score = update_score_and_experience(hits, experience_points_group, score)
+    hits = pygame.sprite.spritecollide(player, experience_points_group, True)
+    update_player_experience(player, hits)
+    detect_rotating_projectile_hits(monster_group, rotating_projectile)
+    return score
+
+def update_score_and_experience(hits, experience_points_group, score):
+    for hit in hits:
+        score += 10
+        experience_points_group.add(ExperiencePoint(hit.rect.center))
+    return score
+
+def update_player_experience(player, hits):
+    for hit in hits:
+        player.experience += 1
+        if player.experience % 2 == 0:
+            player.number_of_projectiles += 1
+
+def detect_rotating_projectile_hits(monster_group, rotating_projectile):
+    for monster in monster_group:
+        if pygame.sprite.collide_rect(rotating_projectile, monster):
+            monster.kill()
+
+def render(screen, font, groups, player, start_ticks, score):
+    screen.fill(BLACK)
+    for group in groups:
+        group.draw(screen)
+    render_experience_bar(screen, player)
+    render_score_and_time(screen, font, start_ticks, score)
+    pygame.display.flip()
+
+def render_experience_bar(screen, player):
+    experience_bar_length = 100
+    experience_bar_height = 10
+    experience_ratio = player.experience / player.experience_needed_for_next_level
+    bar_length = experience_ratio * experience_bar_length
+    experience_bar = pygame.Rect(10, 10, bar_length, experience_bar_height)
+    pygame.draw.rect(screen, PINK, experience_bar)
+
+def render_score_and_time(screen, font, start_ticks, score):
+    score_text = font.render(f'Score: {score}', True, WHITE)
+    screen.blit(score_text, (10, 30))
+    seconds = (pygame.time.get_ticks() - start_ticks) // 1000
+    time_text = font.render(f'Time: {seconds} sec', True, WHITE)
+    screen.blit(time_text, (10, 50))
+
+def run_game():
+    font = initialize_pygame()
+    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    pygame.display.set_caption("Druid.io")
+    clock = pygame.time.Clock()
+
+    player, player_group, projectile_group, monster_group, experience_points_group, rotating_projectile, all_sprites = create_game_objects()
+    monster_spawn_timer = 0
+    monster_spawn_rate = 5000
+    score = 0
+    start_ticks = pygame.time.get_ticks()
+
+    while True:
         keys = pygame.key.get_pressed()
-        player.update(keys)
-        monster_group.update()
-        projectile_group.update()
-        experience_points_group.update()
+                # Continuação da função run_game
+        handle_events(player, projectile_group)
 
-        # Atualiza todos os sprites, passando 'keys' apenas para o 'Player'
-        for sprite in all_sprites:
-            if isinstance(sprite, Player):
-                sprite.update(keys)
-            else:
-                sprite.update()
+        update_game_objects(player, keys, [monster_group, projectile_group, experience_points_group])
+        update_all_sprites(all_sprites, player, keys)
 
+        score = collision_detection(player, monster_group, projectile_group, experience_points_group, rotating_projectile, score)
 
-        # Detecção de colisões e lógica de jogo
-        hits = pygame.sprite.groupcollide(monster_group, projectile_group, True, True)
-        for hit in hits:
-            score += 10  # Adiciona pontos ao score para cada monstro atingido
-            experience_points_group.add(ExperiencePoint(hit.rect.center))
-
-        # Lógica para pontos de experiência
-        hits = pygame.sprite.spritecollide(player, experience_points_group, True)
-        for hit in hits:
-            player.experience += 1
-            if player.experience % 2 == 0:
-                player.number_of_projectiles += 1
-        for hit in hits:
-            experience_points_group.add(ExperiencePoint(hit.rect.center))
-
-        # Detecção de colisão entre o projétil giratório e monstros
-        for monster in monster_group:
-            if pygame.sprite.collide_rect(rotating_projectile, monster):
-                monster.kill()  # Remove o monstro acertado
-
-        # Verifica se é hora de adicionar um novo monstro
+        # Adiciona novos monstros com base no temporizador
         monster_spawn_timer += clock.get_time()
         if monster_spawn_timer >= monster_spawn_rate:
             monster_group.add(Monster(player))
-            monster_spawn_timer = 0  # Reinicia o temporizador
+            monster_spawn_timer = 0
 
-        # Renderização
-        screen.fill(BLACK)
-        player_group.draw(screen)
-        monster_group.draw(screen)
-        projectile_group.draw(screen)
-        experience_points_group.draw(screen)
-        all_sprites.draw(screen)  # Desenha todos os sprites, incluindo o projétil rotatório
+        render(screen, font, [player_group, monster_group, projectile_group, experience_points_group, all_sprites], player, start_ticks, score)
 
-        # Renderiza a barra de experiência
-        experience_bar_length = 100  # Comprimento máximo da barra
-        experience_bar_height = 10
-        experience_ratio = player.experience / player.experience_needed_for_next_level
-        bar_length = experience_ratio * experience_bar_length
-        experience_bar = pygame.Rect(10, 10, bar_length, experience_bar_height)
-        pygame.draw.rect(screen, PINK, experience_bar)
-
-        # Renderiza o contador de score
-        score_text = font.render(f'Score: {score}', True, WHITE)
-        screen.blit(score_text, (10, 30))  # Ajuste a posição conforme necessário
-
-        # Renderiza o contador de tempo
-        seconds = (pygame.time.get_ticks() - start_ticks) // 1000
-        time_text = font.render(f'Time: {seconds} sec', True, WHITE)
-        screen.blit(time_text, (10, 50))  # Ajuste a posição conforme necessário
-
-
-        pygame.display.flip()
         clock.tick(60)
 
-    pygame.quit()
-    sys.exit()
-
 if __name__ == "__main__":
-    pygame.font.init()  # Inicializa o módulo de fontes
-    font = pygame.font.SysFont(None, 36)
     run_game()
+
