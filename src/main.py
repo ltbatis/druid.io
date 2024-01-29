@@ -208,6 +208,7 @@ def run_game():
     min_monster_spawn_rate = 500  # Mínimo de 0,5 segundos
     spawn_rate_decrease = 500  # Diminui a taxa de spawn em 500 ms a cada 30 segundos
     last_spawn_rate_change = pygame.time.get_ticks()
+    last_speed_increase = pygame.time.get_ticks()
     score = 0
     start_ticks = pygame.time.get_ticks()
 
@@ -242,6 +243,12 @@ def run_game():
             if current_time - last_spawn_rate_change > 30000:  # A cada 30 segundos
                 current_monster_spawn_rate = max(min_monster_spawn_rate, current_monster_spawn_rate - spawn_rate_decrease)
                 last_spawn_rate_change = current_time
+
+            # Verifica se é hora de aumentar a velocidade dos monstros
+            if current_time - last_speed_increase > 100000:  # 100 segundos
+                for monster in monster_group:
+                    monster.speed *= 1.09  # Aumenta a velocidade em 9%
+                last_speed_increase = current_time
 
             # Gerar monstros
             monster_spawn_timer += clock.get_time()
