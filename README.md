@@ -26,4 +26,4 @@ Descreva os passos necessários para instalar e executar o jogo. Por exemplo:
 ```bash
 git clone https://seu-repositorio/druid.io.git
 cd druid.io
-python main.py
+python src/main.py
